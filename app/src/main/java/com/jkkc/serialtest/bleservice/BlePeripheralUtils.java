@@ -23,6 +23,8 @@ import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.content.Context;
 import android.os.ParcelUuid;
 import android.util.Log;
+
+import com.alibaba.fastjson.JSONObject;
 import com.blankj.utilcode.util.LogUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.jkkc.serialtest.utils.Network;
@@ -478,15 +480,15 @@ public class BlePeripheralUtils {
 
 
     private void sendDisconnectEvent() {
-//        JSONObject jsonObj = new JSONObject();
-//        jsonObj.put("action", "event");
-//
-//        JSONObject payloadObj = new JSONObject();
-//        payloadObj.put("event", "disconnect");
-//
-//        jsonObj.put("payload", payloadObj);
-//
-//        //send event
-//        sendJson(jsonObj.toJSONString());
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("action", "event");
+
+        JSONObject payloadObj = new JSONObject();
+        payloadObj.put("event", "disconnect");
+
+        jsonObj.put("payload", payloadObj);
+
+        //send event
+        sendJson(jsonObj.toJSONString());
     }
 }
