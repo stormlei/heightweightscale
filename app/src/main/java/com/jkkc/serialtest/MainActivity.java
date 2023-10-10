@@ -58,23 +58,23 @@ public class MainActivity extends AppCompatActivity {
         tvDisconnect = findViewById(R.id.tvDisconnect);
         tvDeviceName = findViewById(R.id.tvDeviceName);
 
-//        iwhServer = new HWServer();
-//        iwhServer.init(this.getApplication());
-//        iwhServer.setCallBack(new HWServer.CallBack() {
-//            @Override
-//            public void success(String height, String weight) {
-//                LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
-//
-//                tvResult.setText("身高："  + height + " 体重：" +weight);
-//
-//                if (blePeripheralUtils != null) blePeripheralUtils.send(height+","+weight);
-//            }
-//
-//            @Override
-//            public void failed() {
-//                LogUtils.e("身高体重", "failed()");
-//            }
-//        });
+        iwhServer = new HWServer();
+        iwhServer.init(this.getApplication());
+        iwhServer.setCallBack(new HWServer.CallBack() {
+            @Override
+            public void success(String height, String weight) {
+                LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
+
+                tvResult.setText("身高："  + height + " 体重：" +weight);
+
+                if (blePeripheralUtils != null) blePeripheralUtils.send(height+","+weight);
+            }
+
+            @Override
+            public void failed() {
+                LogUtils.e("身高体重", "failed()");
+            }
+        });
 
         tvStart.setOnClickListener(v -> {
                 if (iwhServer != null) iwhServer.start();
@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
         jsonObj.put("write_uuid", AppConfig.UUID_WRITE);
         String txtStr = jsonObj.toJSONString();
         //String txtStr = "qpsoft-scan://device/10/"+BtUtils.getName()+"/轻派QP800";
-        Bitmap qrBitmap = CodeUtils.createQRCode(txtStr, 300);
+        Bitmap qrBitmap = CodeUtils.createQRCode(txtStr, 400);
         ivQrCode.setImageBitmap(qrBitmap);
 
         tvDeviceName.setVisibility(View.VISIBLE);
