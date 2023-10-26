@@ -49,4 +49,5 @@ dependencies {
     implementation 'com.blankj:utilcodex:1.31.1'
     implementation 'com.alibaba:fastjson:1.1.70.android'
     implementation 'com.github.jenly1314:zxing-lite:3.0.1'
+    implementation 'com.github.felHR85:UsbSerial:6.0.5'
 }

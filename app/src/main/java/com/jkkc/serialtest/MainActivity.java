@@ -1,41 +1,105 @@
 package com.jkkc.serialtest;
 
-import android.Manifest;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.blankj.utilcode.util.CacheDiskStaticUtils;
 import com.blankj.utilcode.util.LogUtils;
-import com.blankj.utilcode.util.PermissionUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.jkkc.seriallib.wireless.HWServer;
 import com.jkkc.seriallib.wireless.IWHServer;
-import com.jkkc.serialtest.bleservice.BlePeripheralCallback;
-import com.jkkc.serialtest.bleservice.BlePeripheralUtils;
-import com.jkkc.serialtest.utils.BtUtils;
+import com.jkkc.serialtest.usb.UsbService;
 import com.king.zxing.util.CodeUtils;
+import java.lang.ref.WeakReference;
+import java.util.Set;
 
 
 public class MainActivity extends AppCompatActivity {
+    /*
+     * Notifications from UsbService will be received here.
+     */
+    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                    Toast.makeText(context, "USB Ready", Toast.LENGTH_SHORT).show();
+                    queryBleName();
+                    break;
+                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
+                    Toast.makeText(context, "USB Permission not granted", Toast.LENGTH_SHORT).show();
+                    hideUi();
+                    break;
+                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
+                    Toast.makeText(context, "No USB connected", Toast.LENGTH_SHORT).show();
+                    hideUi();
+                    break;
+                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
+                    Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
+                    hideUi();
+                    break;
+                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
+                    Toast.makeText(context, "USB device not supported", Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        }
+    };
+
+    private void queryBleName() {
+        sendBleData("AT+NAME=?");
+    }
+
+    private void sendBleData(String data) {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (usbService != null) {
+                    usbService.write(data.getBytes());
+                }
+            }
+        }, 1000);
+    }
+
+    private UsbService usbService;
+    private MyHandler mHandler;
+    private final ServiceConnection usbConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName arg0, IBinder arg1) {
+            usbService = ((UsbService.UsbBinder) arg1).getService();
+            usbService.setHandler(mHandler);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            usbService = null;
+        }
+    };
+
+
+
     private IWHServer iwhServer = null;
 
     private TextView tvStart;
     private TextView tvResult;
+    private TextView tvDisplay;
     private TextView tvQrStatus;
     private ImageView ivQrCode;
     private RelativeLayout rlConnStatus;
@@ -47,10 +111,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if (!BtUtils.isEnabled()) BtUtils.getBtAdapter().enable();
+        mHandler = new MyHandler(this);
 
         tvStart = findViewById(R.id.tvStart);
         tvResult = findViewById(R.id.tvResult);
+        tvDisplay = findViewById(R.id.tvDisplay);
         tvResult = findViewById(R.id.tvResult);
         tvQrStatus = findViewById(R.id.tvQrStatus);
         ivQrCode = findViewById(R.id.ivQrCode);
@@ -67,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
 
                 tvResult.setText("身高："  + height + " 体重：" +weight);
 
-                if (blePeripheralUtils != null) blePeripheralUtils.send(height+","+weight);
+                sendBleData(height+","+weight);
             }
 
             @Override
@@ -81,167 +146,125 @@ public class MainActivity extends AppCompatActivity {
             }
         );
 
-        ivQrCode.setOnClickListener(view -> {
-            if (blePeripheralUtils != null && blePeripheralUtils.isConnected()) {
-                blePeripheralUtils.disconnect();
-            }
-        });
 
-
-        PermissionUtils.permission(Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION).callback(new PermissionUtils.SimpleCallback() {
-            @Override
-            public void onGranted() {
-                setBle();
-            }
-            @Override
-            public void onDenied() {
-                ToastUtils.showLong("蓝牙定位权限被禁用，请手动开启");
-            }
-        }).request();
-
-
-        initBleCallBack();
     }
 
 
-    private void setBle() {
-        String deviceName = CacheDiskStaticUtils.getString(Keys.DEVICENAME, "");
-        if (TextUtils.isEmpty(deviceName)) {
-            String btName = Build.SERIAL;
-            CacheDiskStaticUtils.put(Keys.DEVICENAME, btName);
-            BtUtils.setName(btName);
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (!BtUtils.getName().equals(Build.SERIAL)) {
-                        CacheDiskStaticUtils.remove(Keys.DEVICENAME);
-                        setBle();
-                        return;
-                    }
-                    //ble peripheral
-                    startService(new Intent(MainActivity.this, BleService.class));
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            showQrCode();
-                        }
-                    }, 3000);
-                }
-            }, 15000);
-
-        } else {
-            if (!BtUtils.getName().equals(Build.SERIAL)) {
-                CacheDiskStaticUtils.remove(Keys.DEVICENAME);
-                setBle();
-                return;
-            }
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    //ble peripheral
-                    startService(new Intent(MainActivity.this, BleService.class));
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            showQrCode();
-                        }
-                    }, 3000);
-                }
-            }, 3000);
-
-        }
-    }
-
-    private void showQrCode() {
+    private void showQrCode(String bleName) {
         tvQrStatus.setVisibility(View.GONE);
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("type", "身高体重秤");
         jsonObj.put("auth_state", 1);
-        jsonObj.put("bluetooth_name", BtUtils.getName());
-        jsonObj.put("name", "QP01");
+        jsonObj.put("bluetooth_name", bleName);
+        jsonObj.put("name", "QPHW01");
         jsonObj.put("sn", Build.SERIAL);
-        jsonObj.put("service_uuid", AppConfig.UUID_SERVER);
-        jsonObj.put("notify_uuid", AppConfig.UUID_NOTIFY);
-        jsonObj.put("write_uuid", AppConfig.UUID_WRITE);
+        jsonObj.put("service_uuid", "");
+        jsonObj.put("notify_uuid", "");
+        jsonObj.put("write_uuid", "");
         String txtStr = jsonObj.toJSONString();
         //String txtStr = "qpsoft-scan://device/10/"+BtUtils.getName()+"/轻派QP800";
         Bitmap qrBitmap = CodeUtils.createQRCode(txtStr, 400);
         ivQrCode.setImageBitmap(qrBitmap);
+        ivQrCode.setVisibility(View.VISIBLE);
 
         tvDeviceName.setVisibility(View.VISIBLE);
-        tvDeviceName.setText("设备名称："+BtUtils.getName());
+        tvDeviceName.setText("设备名称："+bleName);
     }
 
-    private BlePeripheralUtils blePeripheralUtils = null;
-    private void initBleCallBack() {
-        blePeripheralUtils = App.getInstance().getBlePeripheralUtils(this);
-        //设置一个结果callback 方便把某些结果传到前面来
-        blePeripheralUtils.setBlePeripheralCallback(callback);
-    }
-
-    BlePeripheralCallback callback = new BlePeripheralCallback() {
-        @Override
-        public void onConnectionStateChange(final BluetoothDevice device, int status, final int newState) {
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (newState == 2) {
-                        //ToastUtils.showShort(device.getAddress()+"-----"+newState);
-                        ToastUtils.showShort("连接成功");
-                        rlConnStatus.setVisibility(View.VISIBLE);
-                        sb.setLength(0);
-                    } else {
-                        ToastUtils.showShort("已断开");
-                        rlConnStatus.setVisibility(View.GONE);
-                    }
-                }
-            });
-        }
-        @Override
-        public void onCharacteristicWriteRequest(final BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, final byte[] requestBytes) {
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    String message = new String(requestBytes);
-                    String result = sb.append(message).toString();
-                    if (result.endsWith("}}")) {
-                        parseData(result);
-                        sb.setLength(0);
-                    }
-
-                }
-            });
-        }
-    };
-    private StringBuilder sb = new StringBuilder();
-
-
-    private void parseData(String message) {
-        LogUtils.e("+++++++++----"+message);
-        if (message.contains("action")) {
-            JSONObject jsonObj = JSON.parseObject(message);
-            String action = jsonObj.getString("action");
-            if ("command".equals(action)) {
-                JSONObject payloadObj = jsonObj.getJSONObject("payload");
-                String cmd = payloadObj.getString("cmd");
-                if("start".equals(cmd)) {
-                    if (iwhServer != null) iwhServer.start();
-                }
-            }
-        } else {
-            ToastUtils.showShort("无效指令，请升级操作端后使用");
-        }
+    private void hideUi(){
+        tvQrStatus.setVisibility(View.VISIBLE);
+        ivQrCode.setVisibility(View.GONE);
+        tvDeviceName.setVisibility(View.GONE);
     }
 
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    public void onResume() {
+        super.onResume();
+        setFilters();  // Start listening notifications from UsbService
+        startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
+    }
 
-        stopService(new Intent(MainActivity.this, BleService.class));
+    @Override
+    public void onPause() {
+        super.onPause();
+        unregisterReceiver(mUsbReceiver);
+        unbindService(usbConnection);
+    }
 
-        if (blePeripheralUtils != null) blePeripheralUtils.close();
+    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
+        if (!UsbService.SERVICE_CONNECTED) {
+            Intent startService = new Intent(this, service);
+            if (extras != null && !extras.isEmpty()) {
+                Set<String> keys = extras.keySet();
+                for (String key : keys) {
+                    String extra = extras.getString(key);
+                    startService.putExtra(key, extra);
+                }
+            }
+            startService(startService);
+        }
+        Intent bindingIntent = new Intent(this, service);
+        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void setFilters() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
+        filter.addAction(UsbService.ACTION_NO_USB);
+        filter.addAction(UsbService.ACTION_USB_DISCONNECTED);
+        filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
+        registerReceiver(mUsbReceiver, filter);
+    }
+
+    /*
+     * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
+     */
+    private static class MyHandler extends Handler {
+        private final WeakReference<MainActivity> mActivity;
+
+        public MyHandler(MainActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UsbService.MESSAGE_FROM_SERIAL_PORT:
+                    byte[] data = (byte[]) msg.obj;
+                    mActivity.get().tvDisplay.append(new String(data));
+                    handleData();
+                    break;
+                case UsbService.CTS_CHANGE:
+                    Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
+                    break;
+                case UsbService.DSR_CHANGE:
+                    Toast.makeText(mActivity.get(), "DSR_CHANGE",Toast.LENGTH_LONG).show();
+                    break;
+            }
+        }
+
+        private void handleData() {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    String receivedData = mActivity.get().tvDisplay.getText().toString();
+                    LogUtils.e("------"+receivedData);
+                    String bleName = "QP"+Build.SERIAL;
+                    if (!TextUtils.isEmpty(receivedData)) {
+                        if (receivedData.contains(new String(bleName))) {
+                            mActivity.get().showQrCode(bleName);
+                        } else if (receivedData.contains("start")){
+                            if (mActivity.get().iwhServer != null) mActivity.get().iwhServer.start();
+                        } else {
+                            mActivity.get().sendBleData("AT+NAME=QP" + Build.SERIAL);
+                        }
+                    }
+                    mActivity.get().tvDisplay.setText("");
+                }
+            }, 2000);
+        }
     }
 
     @Override
