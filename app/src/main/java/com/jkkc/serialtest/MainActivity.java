@@ -159,9 +159,9 @@ public class MainActivity extends AppCompatActivity {
         jsonObj.put("bluetooth_name", bleName);
         jsonObj.put("name", "QPHW01");
         jsonObj.put("sn", Build.SERIAL);
-        jsonObj.put("service_uuid", "");
-        jsonObj.put("notify_uuid", "");
-        jsonObj.put("write_uuid", "");
+        jsonObj.put("service_uuid", "0000FFE0-0000-1000-8000-00805F9B34FB");
+        jsonObj.put("notify_uuid", "0000FFE1-0000-1000-8000-00805F9B34FB");
+        jsonObj.put("write_uuid", "0000FFE1-0000-1000-8000-00805F9B34FB");
         String txtStr = jsonObj.toJSONString();
         //String txtStr = "qpsoft-scan://device/10/"+BtUtils.getName()+"/轻派QP800";
         Bitmap qrBitmap = CodeUtils.createQRCode(txtStr, 400);
