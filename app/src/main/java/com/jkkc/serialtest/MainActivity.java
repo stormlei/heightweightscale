@@ -133,12 +133,7 @@ public class MainActivity extends AppCompatActivity {
 
                 tvResult.setText("身高："  + height + " 体重：" +weight);
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        sendBleData(height+","+weight);
-                    }
-                });
+                runOnUiThread(() -> sendBleData(height+","+weight));
             }
 
             @Override
