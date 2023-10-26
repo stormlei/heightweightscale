@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
         sendBleData("AT+NAME=?");
     }
 
+
     private void sendBleData(String data) {
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -132,7 +133,12 @@ public class MainActivity extends AppCompatActivity {
 
                 tvResult.setText("身高："  + height + " 体重：" +weight);
 
-                sendBleData(height+","+weight);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        sendBleData(height+","+weight);
+                    }
+                });
             }
 
             @Override
