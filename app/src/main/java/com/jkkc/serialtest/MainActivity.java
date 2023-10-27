@@ -63,22 +63,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void queryBleName() {
-        sendBleData("AT+NAME=?");
-    }
-
-
-    private void sendBleData(String data) {
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (usbService != null) {
-                    usbService.write(data.getBytes());
-                }
-            }
-        }, 1000);
-    }
-
     private UsbService usbService;
     private MyHandler mHandler;
     private final ServiceConnection usbConnection = new ServiceConnection() {
@@ -146,8 +130,6 @@ public class MainActivity extends AppCompatActivity {
                 if (iwhServer != null) iwhServer.start();
             }
         );
-
-
     }
 
 
@@ -254,18 +236,31 @@ public class MainActivity extends AppCompatActivity {
                     LogUtils.e("------"+receivedData);
                     String bleName = "QP"+Build.SERIAL;
                     if (!TextUtils.isEmpty(receivedData)) {
-                        if (receivedData.contains(new String(bleName))) {
+                        if (receivedData.contains(bleName)) {
                             mActivity.get().showQrCode(bleName);
                         } else if (receivedData.contains("start")){
                             if (mActivity.get().iwhServer != null) mActivity.get().iwhServer.start();
                         } else {
-                            mActivity.get().sendBleData("AT+NAME=QP" + Build.SERIAL);
+                            mActivity.get().sendBleData("AT+NAME="+bleName);
                         }
                     }
                     mActivity.get().tvDisplay.setText("");
                 }
             }, 2000);
         }
+    }
+
+    private void queryBleName() {
+        sendBleData("AT+NAME=?");
+    }
+
+
+    private void sendBleData(String data) {
+        new Handler().postDelayed(() -> {
+            if (usbService != null) {
+                usbService.write(data.getBytes());
+            }
+        }, 1000);
     }
 
     @Override
