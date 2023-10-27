@@ -137,6 +137,9 @@ public class MainActivity extends AppCompatActivity {
         tvQrStatus.setVisibility(View.GONE);
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("type", "身高体重秤");
+        jsonObj.put("brand", "领康");
+        jsonObj.put("model", "LK-1016");
+        jsonObj.put("type", "身高体重秤");
         jsonObj.put("auth_state", 1);
         jsonObj.put("bluetooth_name", bleName);
         jsonObj.put("name", "QPHW01");
