@@ -120,15 +120,9 @@ public class MainActivity extends AppCompatActivity {
         tvDisconnect = findViewById(R.id.tvDisconnect);
         tvDeviceName = findViewById(R.id.tvDeviceName);
 
-        try {
-            mediaPlayer = new QpMediaPlayer(this);
-            mediaPlayer.init();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
         iwhServer = new HWServer();
         iwhServer.init(this.getApplication());
+
         iwhServer.setCallBack(new HWServer.CallBack() {
             @Override
             public void success(String height, String weight) {
@@ -138,9 +132,10 @@ public class MainActivity extends AppCompatActivity {
                 String w = String.format("%.1f", Float.parseFloat(weight));
                 tvResult.setText("身高："  + h + " 体重：" +w);
 
-                runOnUiThread(() -> sendBleData(h+","+w));
-
-                handleMedia(h, w);
+                runOnUiThread(() -> {
+                    sendBleData(h+","+w);
+                    handleMedia(h, w);
+                });
             }
 
             @Override
@@ -153,6 +148,13 @@ public class MainActivity extends AppCompatActivity {
                 if (iwhServer != null) iwhServer.start();
             }
         );
+
+        try {
+            mediaPlayer = new QpMediaPlayer(this);
+            mediaPlayer.init();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
