@@ -28,14 +28,14 @@ class QpMediaPlayer {
     public void init() throws IOException {
         //加载整数部分音效
         int intPartCount = 249;
-        for (int i = 0; i < intPartCount; i++) {
+        for (int i = 0; i <= intPartCount; i++) {
             String key = "p"+i;
             audioIds.put(key, context.getAssets().openFd(audioPath+"/"+key+"."+ext));
         }
 
         //加载小数部分音效
         int decimalPartCount = 9;
-        for (int i = 0; i < decimalPartCount; i++) {
+        for (int i = 0; i <= decimalPartCount; i++) {
             String key = "d"+i;
             audioIds.put(key, context.getAssets().openFd(audioPath+"/"+key+"."+ext));
         }
@@ -93,12 +93,12 @@ class QpMediaPlayer {
         }
 
         //加入单位
-        if("weight".equals(type)) {
-            audioIndex.add("kg");
-        } else if ("height".equals(type)){
-            audioIndex.add("cm");
-        }
-        audioIndex.add("gap_1000");
+//        if("weight".equals(type)) {
+//            audioIndex.add("kg");
+//        } else if ("height".equals(type)){
+//            audioIndex.add("cm");
+//        }
+//        audioIndex.add("gap_1000");
 
         //循环audioIndex, 调用soundPlayer.play(audioIndex)
         for (String it: audioIndex) {
