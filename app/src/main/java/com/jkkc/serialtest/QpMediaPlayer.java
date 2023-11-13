@@ -69,7 +69,7 @@ class QpMediaPlayer {
         //先加入类型
         audioIndex.add(type);
         //暂停1秒,保证类型读完
-        audioIndex.add("gap_1000");
+        audioIndex.add("gap_1100");
 
         //加入整数部分
         String intPart = splitValues[0];
