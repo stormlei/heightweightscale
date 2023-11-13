@@ -7,6 +7,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,8 +32,14 @@ import com.jkkc.seriallib.wireless.HWServer;
 import com.jkkc.seriallib.wireless.IWHServer;
 import com.jkkc.serialtest.usb.UsbService;
 import com.king.zxing.util.CodeUtils;
+
+import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.Set;
+import java.util.function.Consumer;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -91,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvDisconnect;
     private TextView tvDeviceName;
 
+    private QpMediaPlayer mediaPlayer;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -108,6 +120,13 @@ public class MainActivity extends AppCompatActivity {
         tvDisconnect = findViewById(R.id.tvDisconnect);
         tvDeviceName = findViewById(R.id.tvDeviceName);
 
+        try {
+            mediaPlayer = new QpMediaPlayer(this);
+            mediaPlayer.init();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         iwhServer = new HWServer();
         iwhServer.init(this.getApplication());
         iwhServer.setCallBack(new HWServer.CallBack() {
@@ -115,9 +134,13 @@ public class MainActivity extends AppCompatActivity {
             public void success(String height, String weight) {
                 LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
 
-                tvResult.setText("身高："  + height + " 体重：" +weight);
+                String h = String.format("%.1f", Float.parseFloat(height));
+                String w = String.format("%.1f", Float.parseFloat(weight));
+                tvResult.setText("身高："  + h + " 体重：" +w);
 
-                runOnUiThread(() -> sendBleData(height+","+weight));
+                runOnUiThread(() -> sendBleData(h+","+w));
+
+                handleMedia(h, w);
             }
 
             @Override
@@ -130,6 +153,16 @@ public class MainActivity extends AppCompatActivity {
                 if (iwhServer != null) iwhServer.start();
             }
         );
+    }
+
+
+    private void handleMedia(String h, String w) {
+        try {
+            mediaPlayer.playNumber("height", Float.parseFloat(h));
+            mediaPlayer.playNumber("weight", Float.parseFloat(w));
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
