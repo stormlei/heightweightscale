@@ -19,13 +19,13 @@ class QpMediaPlayer {
 
     private Context context;
 
-    public QpMediaPlayer(Context context) {
+    public QpMediaPlayer(Context context) throws IOException {
         this.context = context;
         audioIds = new HashMap<>();
         mediaPlayer = new MediaPlayer();
     }
 
-    public void init() throws IOException {
+    {
         //加载整数部分音效
         int intPartCount = 249;
         for (int i = 0; i <= intPartCount; i++) {
@@ -44,6 +44,10 @@ class QpMediaPlayer {
         audioIds.put("kg", context.getAssets().openFd(audioPath+"/kg."+ext));
         audioIds.put("weight", context.getAssets().openFd(audioPath+"/weight."+ext));
         audioIds.put("height", context.getAssets().openFd(audioPath+"/height."+ext));
+    }
+
+    public void init() throws IOException {
+
     }
 
     private void play(String id) {
