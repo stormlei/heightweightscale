@@ -249,13 +249,23 @@ public class MainActivity extends AppCompatActivity {
             mActivity = new WeakReference<>(activity);
         }
 
+        private final StringBuilder strBuilder = new StringBuilder();
+        private Runnable r;
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
                     byte[] data = (byte[]) msg.obj;
-                    mActivity.get().tvDisplay.append(new String(data));
-                    handleData();
+                    String buffer = new String(data);
+                    LogUtils.e("------"+buffer);
+                    if (!TextUtils.isEmpty(buffer)) {
+                        strBuilder.append(buffer);
+                        //取消定时器
+                        if (r != null) removeCallbacks(r);
+                        //启动定时器
+                        postDelayed(r = this::handleData, 100);
+                    }
                     break;
                 case UsbService.CTS_CHANGE:
                     Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
@@ -267,38 +277,30 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void handleData() {
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    String receivedData = mActivity.get().tvDisplay.getText().toString();
-                    LogUtils.e("------"+receivedData);
-                    String bleName = "QP"+Build.SERIAL;
-                    if (!TextUtils.isEmpty(receivedData)) {
-                        if (receivedData.contains(bleName)) {
-                            mActivity.get().showQrCode(bleName);
-                        } else if (receivedData.contains("start")){
-                            if (mActivity.get().iwhServer != null) mActivity.get().iwhServer.start();
-                        } else {
-                            mActivity.get().sendBleData("AT+NAME="+bleName);
-                        }
-                    }
-                    mActivity.get().tvDisplay.setText("");
-                }
-            }, 2000);
+            String receivedData = strBuilder.toString();
+            String bleName = "QP"+Build.SERIAL;
+            LogUtils.e("------"+receivedData);
+            if (receivedData.contains(bleName) || receivedData.contains("OKsetNAME")) {
+                mActivity.get().showQrCode(bleName);
+            } else if (receivedData.contains("start")){
+                if (mActivity.get().iwhServer != null) mActivity.get().iwhServer.start();
+            } else {
+                mActivity.get().sendBleData("AT+NAME="+bleName);
+            }
+            strBuilder.setLength(0);
         }
     }
 
     private void queryBleName() {
-        sendBleData("AT+NAME=?");
+        new Handler().postDelayed(() -> {
+            sendBleData("AT+NAME=?");
+        }, 500);
     }
 
-
     private void sendBleData(String data) {
-        new Handler().postDelayed(() -> {
-            if (usbService != null) {
-                usbService.write(data.getBytes());
-            }
-        }, 1000);
+        if (usbService != null) {
+            usbService.write(data.getBytes());
+        }
     }
 
     @Override
