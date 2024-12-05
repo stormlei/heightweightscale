@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.blankj.utilcode.util.LogUtils;
 import com.felhr.usbserial.CDCSerialDevice;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
@@ -228,7 +229,7 @@ public class UsbService extends Service {
      */
     private void requestUserPermission() {
         Log.d(TAG, String.format("requestUserPermission(%X:%X)", device.getVendorId(), device.getProductId() ) );
-        PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+        PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_MUTABLE);
         usbManager.requestPermission(device, mPendingIntent);
     }
 

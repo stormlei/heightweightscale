@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+-keep class com.ete.lib.hw.bean.**{*;}
+-keep class com.ete.lib.hw.device.**{*;}
+-keep class com.ete.lib.hw.test.**{*;}
+-keep class com.ete.lib.server.**{*;}

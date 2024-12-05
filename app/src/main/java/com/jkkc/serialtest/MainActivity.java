@@ -7,10 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -24,22 +20,17 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.alibaba.fastjson.JSONObject;
 import com.blankj.utilcode.util.LogUtils;
-import com.blankj.utilcode.util.ToastUtils;
-import com.jkkc.seriallib.wireless.HWServer;
-import com.jkkc.seriallib.wireless.IWHServer;
+import com.ete.lib.server.IWHServer;
 import com.jkkc.serialtest.usb.UsbService;
 import com.king.zxing.util.CodeUtils;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import java.util.Set;
-import java.util.function.Consumer;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -120,10 +111,8 @@ public class MainActivity extends AppCompatActivity {
         tvDisconnect = findViewById(R.id.tvDisconnect);
         tvDeviceName = findViewById(R.id.tvDeviceName);
 
-        iwhServer = new HWServer();
-        iwhServer.init(this.getApplication());
-
-        iwhServer.setCallBack(new HWServer.CallBack() {
+        iwhServer = new IWHServer();
+        iwhServer.setCallBack(new IWHServer.Callback() {
             @Override
             public void success(String height, String weight) {
                 LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
@@ -142,7 +131,20 @@ public class MainActivity extends AppCompatActivity {
             public void failed() {
                 LogUtils.e("身高体重", "failed()");
             }
+
+            @Override
+            public void failed(@NonNull String s) {
+                super.failed(s);
+            }
+
+            @Override
+            public void initSuccess() {
+                super.initSuccess();
+                LogUtils.e("身高体重称初始化成功");
+            }
         });
+
+        iwhServer.init(App.getInstance());
 
         tvStart.setOnClickListener(v -> {
                 if (iwhServer != null) iwhServer.start();
@@ -211,6 +213,12 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         unregisterReceiver(mUsbReceiver);
         unbindService(usbConnection);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (iwhServer != null) iwhServer.destroy();
     }
 
     private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
