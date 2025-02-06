@@ -24,7 +24,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.alibaba.fastjson.JSONObject;
 import com.blankj.utilcode.util.LogUtils;
-import com.ete.lib.server.IWHServer;
+import com.blankj.utilcode.util.ToastUtils;
+import com.jkkc.seriallib.wireless.HWServer;
+import com.jkkc.seriallib.wireless.IWHServer;
 import com.jkkc.serialtest.usb.UsbService;
 import com.king.zxing.util.CodeUtils;
 
@@ -111,8 +113,13 @@ public class MainActivity extends AppCompatActivity {
         tvDisconnect = findViewById(R.id.tvDisconnect);
         tvDeviceName = findViewById(R.id.tvDeviceName);
 
-        iwhServer = new IWHServer();
-        iwhServer.setCallBack(new IWHServer.Callback() {
+        iwhServer = new HWServer();
+        boolean isInit = iwhServer.init(App.getInstance());
+        if (!isInit) {
+            ToastUtils.showShort("身高体重称初始化失败");
+            return;
+        }
+        iwhServer.setCallBack(new com.jkkc.seriallib.wireless.CallBack() {
             @Override
             public void success(String height, String weight) {
                 LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
@@ -128,26 +135,15 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void failed() {
-                LogUtils.e("身高体重", "failed()");
-            }
-
-            @Override
             public void failed(@NonNull String s) {
-                super.failed(s);
-            }
-
-            @Override
-            public void initSuccess() {
-                super.initSuccess();
-                LogUtils.e("身高体重称初始化成功");
+                LogUtils.e("身高体重", "failed()");
             }
         });
 
-        iwhServer.init(App.getInstance());
 
         tvStart.setOnClickListener(v -> {
                 if (iwhServer != null) iwhServer.start();
+                LogUtils.e("开始测量");
             }
         );
 
@@ -218,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (iwhServer != null) iwhServer.destroy();
+        if (iwhServer != null) iwhServer.close();
     }
 
     private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
