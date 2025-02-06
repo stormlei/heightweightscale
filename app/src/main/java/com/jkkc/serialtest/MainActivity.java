@@ -25,8 +25,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.alibaba.fastjson.JSONObject;
 import com.blankj.utilcode.util.LogUtils;
 import com.blankj.utilcode.util.ToastUtils;
-import com.jkkc.seriallib.wireless.HWServer;
-import com.jkkc.seriallib.wireless.IWHServer;
+import com.ete.lib.server.IWHServer;
 import com.jkkc.serialtest.usb.UsbService;
 import com.king.zxing.util.CodeUtils;
 
@@ -113,13 +112,14 @@ public class MainActivity extends AppCompatActivity {
         tvDisconnect = findViewById(R.id.tvDisconnect);
         tvDeviceName = findViewById(R.id.tvDeviceName);
 
-        iwhServer = new HWServer();
-        boolean isInit = iwhServer.init(App.getInstance());
-        if (!isInit) {
-            ToastUtils.showShort("身高体重称初始化失败");
-            return;
-        }
-        iwhServer.setCallBack(new com.jkkc.seriallib.wireless.CallBack() {
+        iwhServer = new IWHServer();
+        iwhServer.init(App.getInstance());
+        iwhServer.setCallBack(new IWHServer.Callback() {
+            @Override
+            public void failed() {
+                LogUtils.e("身高体重", "failed()");
+            }
+
             @Override
             public void success(String height, String weight) {
                 LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
@@ -132,11 +132,6 @@ public class MainActivity extends AppCompatActivity {
                     sendBleData(h+","+w);
                     handleMedia(h, w);
                 });
-            }
-
-            @Override
-            public void failed(@NonNull String s) {
-                LogUtils.e("身高体重", "failed()");
             }
         });
 
@@ -214,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (iwhServer != null) iwhServer.close();
+        if (iwhServer != null) iwhServer.destroy();
     }
 
     private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {

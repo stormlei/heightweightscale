@@ -42,7 +42,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
     api rootProject.ext.support["appcompat-v7"]
     //implementation project(path: ':seriallib')
-    implementation(name : 'lib_eteHw_2.0.0_20250116_130602_release',ext: 'aar')
+    implementation(name : 'hw_v2.0.0_release_20241204_152930',ext: 'aar')
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
