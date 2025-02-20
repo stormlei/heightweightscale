@@ -51,4 +51,5 @@ dependencies {
     implementation 'com.alibaba:fastjson:1.1.70.android'
     implementation 'com.github.jenly1314:zxing-lite:3.0.1'
     implementation 'com.github.felHR85:UsbSerial:6.0.5'
+    implementation 'com.licheedev:android-serialport:2.1.3'
 }
