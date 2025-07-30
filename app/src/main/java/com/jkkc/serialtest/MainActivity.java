@@ -105,7 +105,6 @@ public class MainActivity extends AppCompatActivity {
         tvStart = findViewById(R.id.tvStart);
         tvResult = findViewById(R.id.tvResult);
         tvDisplay = findViewById(R.id.tvDisplay);
-        tvResult = findViewById(R.id.tvResult);
         tvQrStatus = findViewById(R.id.tvQrStatus);
         ivQrCode = findViewById(R.id.ivQrCode);
         rlConnStatus = findViewById(R.id.rlConnStatus);
@@ -127,11 +126,10 @@ public class MainActivity extends AppCompatActivity {
                 String h = String.format("%.1f", Float.parseFloat(height));
                 String w = String.format("%.1f", Float.parseFloat(weight));
                 tvResult.setText("身高："  + h + " 体重：" +w);
-
-                runOnUiThread(() -> {
-                    sendBleData(h+","+w);
-                    handleMedia(h, w);
-                });
+                sendBleData(h+","+w);
+                new Thread(() -> {
+                    handleMedia(h, w); // 后台执行耗时操作
+                }).start();
             }
         });
 
