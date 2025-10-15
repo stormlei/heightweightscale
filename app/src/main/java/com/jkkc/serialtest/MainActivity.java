@@ -25,13 +25,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.alibaba.fastjson.JSONObject;
 import com.blankj.utilcode.util.LogUtils;
 import com.blankj.utilcode.util.ToastUtils;
-import com.ete.lib.server.IWHServer;
+import com.jkkc.seriallib.wireless.CallBack;
+import com.jkkc.seriallib.wireless.HWServer;
+import com.jkkc.seriallib.wireless.IWHServer;
 import com.jkkc.serialtest.usb.UsbService;
 import com.king.zxing.util.CodeUtils;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Set;
+
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -111,27 +116,37 @@ public class MainActivity extends AppCompatActivity {
         tvDisconnect = findViewById(R.id.tvDisconnect);
         tvDeviceName = findViewById(R.id.tvDeviceName);
 
-        iwhServer = new IWHServer();
-        iwhServer.init(App.getInstance());
-        iwhServer.setCallBack(new IWHServer.Callback() {
-            @Override
-            public void failed() {
-                LogUtils.e("身高体重", "failed()");
-            }
-
-            @Override
-            public void success(String height, String weight) {
-                LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
-
-                String h = String.format("%.1f", Float.parseFloat(height));
-                String w = String.format("%.1f", Float.parseFloat(weight));
-                tvResult.setText("身高："  + h + " 体重：" +w);
-                sendBleData(h+","+w);
-                new Thread(() -> {
-                    handleMedia(h, w); // 后台执行耗时操作
-                }).start();
-            }
-        });
+//        iwhServer = new HWServer();
+//        iwhServer.init(App.getInstance(), isSuccess -> {
+//            if (!isSuccess) {
+//                ToastUtils.showShort("初始化失败");
+//            }
+//            return null;
+//        });
+//        iwhServer.setCallBack(new CallBack() {
+//            @Override
+//            public void onWeightData(@NonNull String s) {
+//
+//            }
+//
+//            @Override
+//            public void failed(String msg) {
+//                LogUtils.e("身高体重", "failed()");
+//            }
+//
+//            @Override
+//            public void success(String height, String weight) {
+//                LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
+//
+//                String h = String.format("%.1f", Float.parseFloat(height));
+//                String w = String.format("%.1f", Float.parseFloat(weight));
+//                tvResult.setText("身高："  + h + " 体重：" +w);
+//                sendBleData(h+","+w);
+//                new Thread(() -> {
+//                    handleMedia(h, w); // 后台执行耗时操作
+//                }).start();
+//            }
+//        });
 
 
         tvStart.setOnClickListener(v -> {
@@ -207,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (iwhServer != null) iwhServer.destroy();
+        if (iwhServer != null) iwhServer.close();
     }
 
     private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
@@ -275,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
 
         private void handleData() {
             String receivedData = strBuilder.toString();
-            String bleName = "QP"+Build.SERIAL;
+            String bleName = "QP"+Build.SERIAL.substring(0, 4);
             LogUtils.e("------"+receivedData);
             if (receivedData.contains(bleName) || receivedData.contains("OKsetNAME")) {
                 mActivity.get().showQrCode(bleName);
