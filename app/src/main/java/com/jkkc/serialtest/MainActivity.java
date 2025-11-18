@@ -116,37 +116,37 @@ public class MainActivity extends AppCompatActivity {
         tvDisconnect = findViewById(R.id.tvDisconnect);
         tvDeviceName = findViewById(R.id.tvDeviceName);
 
-//        iwhServer = new HWServer();
-//        iwhServer.init(App.getInstance(), isSuccess -> {
-//            if (!isSuccess) {
-//                ToastUtils.showShort("初始化失败");
-//            }
-//            return null;
-//        });
-//        iwhServer.setCallBack(new CallBack() {
-//            @Override
-//            public void onWeightData(@NonNull String s) {
-//
-//            }
-//
-//            @Override
-//            public void failed(String msg) {
-//                LogUtils.e("身高体重", "failed()");
-//            }
-//
-//            @Override
-//            public void success(String height, String weight) {
-//                LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
-//
-//                String h = String.format("%.1f", Float.parseFloat(height));
-//                String w = String.format("%.1f", Float.parseFloat(weight));
-//                tvResult.setText("身高："  + h + " 体重：" +w);
-//                sendBleData(h+","+w);
-//                new Thread(() -> {
-//                    handleMedia(h, w); // 后台执行耗时操作
-//                }).start();
-//            }
-//        });
+        iwhServer = new HWServer();
+        iwhServer.init(App.getInstance(), isSuccess -> {
+            if (!isSuccess) {
+                ToastUtils.showShort("初始化失败");
+            }
+            return null;
+        });
+        iwhServer.setCallBack(new CallBack() {
+            @Override
+            public void onWeightData(@NonNull String s) {
+
+            }
+
+            @Override
+            public void failed(String msg) {
+                LogUtils.e("身高体重", "failed()");
+            }
+
+            @Override
+            public void success(String height, String weight) {
+                LogUtils.e("身高体重", "height = "  + height + " weight = " +weight);
+
+                String h = String.format("%.1f", Float.parseFloat(height));
+                String w = String.format("%.1f", Float.parseFloat(weight));
+                tvResult.setText("身高："  + h + " 体重：" +w);
+                sendBleData(h+","+w);
+                new Thread(() -> {
+                    handleMedia(h, w); // 后台执行耗时操作
+                }).start();
+            }
+        });
 
 
         tvStart.setOnClickListener(v -> {
